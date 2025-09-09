@@ -1,6 +1,16 @@
-# 🛡️ Finance Wallet Codex
+---
+layout: default
+title: Finance Wallet Codex GUI
+---
 
-Welcome to the sovereign Codex of Finance Wallet Onboarding™.
+# 🛡️ Finance Wallet Codex — GUI Navigation
 
-- [Codex Index](codex-index.md)
-- [Crest History](codex-history.md)
+Welcome to the sovereign GUI for the entire codebase.  
+Select a crest or module to explore its lineage.
+
+![First Crest](../assets/impact-crests/first-crest.svg)
+
+## 📂 Navigation
+{% for item in site.data.navigation.main %}
+- [{{ item.title }}]({{ item.url }})
+{% endfor %}

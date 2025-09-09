@@ -1,0 +1,30 @@
+# Auto-generated navigation for Finance Wallet Onboarding™
+main:
+  - title: ".env.example"
+    url: /.env.example
+  - title: "ci.yml"
+    url: /.github/workflows/ci.yml
+  - title: "pages.yml"
+    url: /.github/workflows/pages.yml
+  - title: "prebuild.yml"
+    url: /.github/workflows/prebuild.yml
+  - title: ".gitignore"
+    url: /.gitignore
+  - title: "README.md"
+    url: /README.md
+  - title: "first-crest.svg"
+    url: /assets/impact-crests/first-crest.svg
+  - title: "_config.yml"
+    url: /docs/_config.yml
+  - title: "navigation.yml"
+    url: /docs/_data/navigation.yml
+  - title: "index.html"
+    url: /docs/index.html
+  - title: "index.md"
+    url: /docs/index.md
+  - title: "package.json"
+    url: /package.json
+  - title: "bootstrap_pages_gui.sh"
+    url: /scripts/bootstrap_pages_gui.sh
+  - title: "generate_codex_index.sh"
+    url: /scripts/generate_codex_index.sh
