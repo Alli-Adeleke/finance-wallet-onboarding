@@ -12,8 +12,6 @@ main:
     url: /.gitignore
   - title: "README.md"
     url: /README.md
-  - title: "first-crest.svg"
-    url: /assets/impact-crests/first-crest.svg
   - title: "_config.yml"
     url: /docs/_config.yml
   - title: "navigation.yml"
@@ -26,5 +24,3 @@ main:
     url: /package.json
   - title: "bootstrap_pages_gui.sh"
     url: /scripts/bootstrap_pages_gui.sh
-  - title: "generate_codex_index.sh"
-    url: /scripts/generate_codex_index.sh
