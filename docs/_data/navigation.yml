@@ -6,17 +6,17 @@ main:
     children:
       - title: "_config.yml (updated %Y->-)"
         url: /docs/_config.yml
-      - title: "navigation.yml (updated %Y->-)"
+      - title: "navigation.yml (updated %Y->- (HEAD -> main))"
         url: /docs/_data/navigation.yml
       - title: "index.md (updated %Y->- (HEAD -> main))"
         url: /docs/admin/index.md
       - title: "index.html (updated %Y->-)"
         url: /docs/index.html
-      - title: "index.md (updated %Y->-)"
+      - title: "index.md (updated %Y->- (HEAD -> main))"
         url: /docs/index.md
   - title: "Automation Scripts"
     children:
-      - title: "bootstrap_full_pages_gui.sh (updated )"
+      - title: "bootstrap_full_pages_gui.sh (updated %Y->- (HEAD -> main))"
         url: /scripts/bootstrap_full_pages_gui.sh
       - title: "bootstrap_pages_gui.sh (updated %Y->-)"
         url: /scripts/bootstrap_pages_gui.sh

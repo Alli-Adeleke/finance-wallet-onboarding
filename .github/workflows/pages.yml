@@ -6,7 +6,7 @@ on:
   workflow_dispatch:
 
 permissions:
-  contents: write      # Needed to commit regenerated GUI
+  contents: write
   pages: write
   id-token: write
 
@@ -20,29 +20,28 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      # 1️⃣ Run GUI bootstrap before build
-      - name: Bootstrap Pages GUI
-        run: bash scripts/bootstrap_pages_gui.sh
+      - name: Run full Pages GUI bootstrap
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: bash scripts/bootstrap_full_pages_gui.sh
 
-      # 2️⃣ Commit updated GUI files (if changed)
-      - name: Commit updated GUI files
+      - name: Commit regenerated GUI
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add docs/_data/navigation.yml docs/index.md
-          git commit -m "chore: regenerate Pages GUI [skip ci]" || echo "No changes to commit"
-          git push
+          git add docs/_data/navigation.yml docs/index.md docs/admin/index.md
+          git commit -m "chore: regenerate unified GUI + admin [skip ci]" || echo "No changes"
 
-      # 3️⃣ Configure Pages
+      - name: Push regeneration
+        run: git push
+
       - uses: actions/configure-pages@v5
 
-      # 4️⃣ Build Jekyll site from /docs
       - uses: actions/jekyll-build-pages@v1
         with:
           source: ./docs
           destination: ./_site
 
-      # 5️⃣ Upload artifact for deployment
       - uses: actions/upload-pages-artifact@v3
         with:
           path: ./_site
@@ -52,5 +51,3 @@ jobs:
     needs: build
     steps:
       - uses: actions/deploy-pages@v4
-        with:
-          token: ${{ secrets.GITHUB_TOKEN }}  # Default token, no need to create a PAT
