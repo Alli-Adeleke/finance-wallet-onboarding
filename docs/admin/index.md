@@ -10,12 +10,12 @@ This console provides direct access to operational controls, crest management, a
 
 ## 📊 Repo Health & Lineage
 - **Current branch:** `main`
-- **Last commit:** {% capture last_commit %}{{ site.time | date: "%Y-%m-%d %H:%M:%S UTC" }}{% endcapture %}{{ last_commit }}
-- **Total commits:** {{ site.github.public_repositories }}
+- **Last commit:** %Y->- (HEAD -> main) e4ec66aea83f1dd7764c8869b7580c3194e4ed29:%M:HEAD UTC
+- **Total commits:** 6
 
 ## 🖼 Crest Management
 - [View all crests](../assets/impact-crests/)
-- [Upload new crest](#) *(future enhancement: form upload)*
+- *(Future enhancement: crest upload form)*
 
 ## 📜 Codex Index Controls
 - [Regenerate Codex Index](../codex-index.md) *(auto-updates on push)*

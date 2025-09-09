@@ -1,26 +1,36 @@
 # Auto-generated navigation for Finance Wallet Onboarding™
 main:
-  - title: ".env.example"
-    url: /.env.example
-  - title: "ci.yml"
-    url: /.github/workflows/ci.yml
-  - title: "pages.yml"
-    url: /.github/workflows/pages.yml
-  - title: "prebuild.yml"
-    url: /.github/workflows/prebuild.yml
-  - title: ".gitignore"
-    url: /.gitignore
-  - title: "README.md"
-    url: /README.md
-  - title: "_config.yml"
-    url: /docs/_config.yml
-  - title: "navigation.yml"
-    url: /docs/_data/navigation.yml
-  - title: "index.html"
-    url: /docs/index.html
-  - title: "index.md"
-    url: /docs/index.md
-  - title: "package.json"
-    url: /package.json
-  - title: "bootstrap_pages_gui.sh"
-    url: /scripts/bootstrap_pages_gui.sh
+  - title: "Applications"
+    children:
+  - title: "Documentation"
+    children:
+      - title: "_config.yml (updated %Y->-)"
+        url: /docs/_config.yml
+      - title: "navigation.yml (updated %Y->-)"
+        url: /docs/_data/navigation.yml
+      - title: "index.md (updated %Y->- (HEAD -> main))"
+        url: /docs/admin/index.md
+      - title: "index.html (updated %Y->-)"
+        url: /docs/index.html
+      - title: "index.md (updated %Y->-)"
+        url: /docs/index.md
+  - title: "Automation Scripts"
+    children:
+      - title: "bootstrap_full_pages_gui.sh (updated )"
+        url: /scripts/bootstrap_full_pages_gui.sh
+      - title: "bootstrap_pages_gui.sh (updated %Y->-)"
+        url: /scripts/bootstrap_pages_gui.sh
+      - title: "generate_codex_index.sh (updated )"
+        url: /scripts/generate_codex_index.sh
+  - title: "Services"
+    children:
+  - title: "Platform"
+    children:
+  - title: "Assets & Crests"
+    children:
+      - title: "first-crest.svg (updated )"
+        url: /assets/impact-crests/first-crest.svg
+  - title: "Tools"
+    children:
+  - title: "Admin Console"
+    url: /admin/index.html
