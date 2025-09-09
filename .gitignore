@@ -1,0 +1,4 @@
+node_modules/
+.env
+rendered-badges/
+.DS_Store
