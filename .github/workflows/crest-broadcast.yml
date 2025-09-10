@@ -1,0 +1,26 @@
+name: Crest Broadcast
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - main
+
+jobs:
+  broadcast:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Announce crest shimmer
+        run: |
+          echo "📡 Broadcasting crest shimmer to the network..."
+          echo "🌌 Ceremony completed at $(date -u)"
+          echo "Codex entry: $GITHUB_SERVER_URL/$GITHUB_REPOSITORY/issues"
+
+      - name: Log to Codex artifact
+        run: |
+          mkdir -p codex
+          echo "Crest broadcast triggered on $(date -u)" > codex/broadcast.log
+          tar -czf codex-broadcast.tar.gz codex
