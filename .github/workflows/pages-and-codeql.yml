@@ -2,9 +2,9 @@ name: Pages & CodeQL
 
 on:
   push:
-    branches: [ main, create_repo ]
+    branches: [ main ]
   pull_request:
-    branches: [ main, create_repo ]
+    branches: [ main ]
 
 jobs:
   analyze:
