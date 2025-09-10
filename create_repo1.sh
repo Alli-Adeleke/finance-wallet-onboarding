@@ -1,17 +1,28 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-echo "🚀 [Crest Shimmer] Starting sovereign create_repo bootstrap with CodeQL & Pages fixes..."
+BRANCH_NAME=$(git rev-parse --abbrev-ref HEAD)
 
-# === 1. Ensure base directories ===
+echo "🚀 [Crest Shimmer] Starting sovereign create_repo bootstrap with branch‑aware golden restore..."
+
+# === 1. Pick golden branch based on current branch ===
+case "$BRANCH_NAME" in
+  main)          GOLDEN_BRANCH="origin/my-feature" ;;
+  create_repo)   GOLDEN_BRANCH="origin/ceremonial-sync" ;;
+  *)             GOLDEN_BRANCH="origin/my-feature" ;;
+esac
+echo "📜 Golden branch for restore: $GOLDEN_BRANCH"
+
+# === 2. Ensure base directories ===
 mkdir -p \
   assets/impact-crests \
   docs/_data \
   scripts \
   .github/codeql \
-  .github/workflows
+  .github/workflows \
+  "Finance Wallet Onboarding"
 
-# === 2. Install system dependencies ===
+# === 3. Install system dependencies ===
 echo "📦 Installing system dependencies..."
 if command -v apt-get &>/dev/null; then
     sudo apt-get update
@@ -20,30 +31,29 @@ elif command -v yum &>/dev/null; then
     sudo yum install -y git curl jq unzip make gcc python3 python3-pip
 fi
 
-# === 3. Install Node.js & npm (for Pages/CI scripts) ===
+# === 4. Install Node.js & npm ===
 if ! command -v node &>/dev/null; then
     echo "⬇️ Installing Node.js..."
     curl -fsSL https://deb.nodesource.com/setup_20.x | sudo -E bash -
     sudo apt-get install -y nodejs
 fi
 
-# === 4. Install project dependencies for CodeQL scans ===
-if [ -f package.json ]; then
-    echo "📦 Installing npm dependencies..."
-    npm ci || npm install
+# === 5. JS dependencies with lockfile fallback ===
+if [ -f package-lock.json ]; then
+    npm ci
 else
-    echo "{}" > package.json
-    npm init -y
+    npm install --package-lock
 fi
 
+# === 6. Python dependencies ===
 if [ -f requirements.txt ]; then
-    echo "📦 Installing Python dependencies..."
     pip install -r requirements.txt
 else
     echo "# Python dependencies" > requirements.txt
+    pip install -r requirements.txt
 fi
 
-# === 5. CodeQL config ===
+# === 7. CodeQL config ===
 cat > .github/codeql/codeql-config.yml <<'EOF'
 name: "Default CodeQL Config"
 paths:
@@ -53,7 +63,7 @@ paths-ignore:
   - vendor
 EOF
 
-# === 6. Pages config ===
+# === 8. Pages config ===
 cat > docs/_config.yml <<'EOF'
 title: "Finance Wallet Onboarding"
 description: "Unified GUI, Admin Console, Roles, Workflows, and Guardrails"
@@ -65,7 +75,7 @@ cat > docs/index.md <<'EOF'
 This site is built and deployed via GitHub Pages.
 EOF
 
-# === 7. CI / Pages & CodeQL workflow ===
+# === 9. Pages & CodeQL workflow ===
 cat > .github/workflows/pages-and-codeql.yml <<'EOF'
 name: Pages & CodeQL
 
@@ -92,7 +102,7 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: '20'
-      - run: npm ci || npm install
+      - run: npm ci || npm install --package-lock
       - uses: actions/setup-python@v5
         with:
           python-version: '3.x'
@@ -115,7 +125,7 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: '20'
-      - run: npm ci || npm install
+      - run: npm ci || npm install --package-lock
       - run: mkdir -p _site && cp -r docs/* _site/
       - uses: actions/configure-pages@v4
       - uses: actions/upload-pages-artifact@v3
@@ -124,7 +134,7 @@ jobs:
       - uses: actions/deploy-pages@v4
 EOF
 
-# === 8. Governance & guardrails ===
+# === 10. Governance & guardrails ===
 cat > CODEOWNERS <<'EOF'
 *       @Alli-Adeleke
 EOF
@@ -141,13 +151,23 @@ echo "🛡 Applying repo guardrails..."
 EOF
 chmod +x scripts/setup_guardrails.sh
 
-# === 9. Finance Wallet Onboarding folder ===
-mkdir -p "Finance Wallet Onboarding"
+# === 11. Finance Wallet Onboarding folder ===
+if [ -d finance-wallet-onboarding/.git ]; then
+    echo "⚠️ Removing embedded .git to make it a normal folder..."
+    rm -rf finance-wallet-onboarding/.git
+fi
 echo "# Finance Wallet Onboarding" > "Finance Wallet Onboarding/README.md"
 
-# === 10. Commit ceremonial bootstrap ===
-git add .
-git commit -m "Bootstrap create_repo with CodeQL & Pages fixes [crest shimmer]" || true
+# === 12. Restore additional files (~88 total) from golden branch ===
+git fetch origin
+git checkout "$GOLDEN_BRANCH" -- . || true
 
-echo "✅ Sovereign bootstrap complete — ready for push & CI."
-# --- IGNORE ---
+# === 13. Commit ceremonial bootstrap ===
+git add .
+git commit -m "Bootstrap $BRANCH_NAME with full restoration, CodeQL & Pages fixes [crest shimmer]" || true
+
+# === 14. Auto-push to trigger CI ===
+echo "⬆️ Pushing $BRANCH_NAME to origin..."
+git push origin "$BRANCH_NAME"
+
+echo "✅ Sovereign bootstrap complete — CI checks should now run and Pages should render."
