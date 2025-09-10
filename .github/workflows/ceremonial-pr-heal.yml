@@ -1,0 +1,60 @@
+name: Ceremonial PR Heal
+
+on:
+  pull_request:
+    branches:
+      - main
+    types:
+      - opened
+      - synchronize
+      - reopened
+
+jobs:
+  heal-pr:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pull-requests: write
+      actions: write
+
+    steps:
+      - name: Install GitHub CLI
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y gh
+          echo "${{ secrets.GITHUB_TOKEN }}" | gh auth login --with-token
+
+      - name: Check PR mergeability
+        id: check
+        run: |
+          STATE=$(gh pr view ${{ github.event.pull_request.number }} --json mergeable_state -q .mergeable_state)
+          echo "mergeable_state=$STATE" >> $GITHUB_OUTPUT
+          echo "PR mergeable_state: $STATE"
+
+      - name: Skip if not blocked
+        if: steps.check.outputs.mergeable_state != 'blocked'
+        run: |
+          echo "✅ PR is not blocked — skipping ceremonial heal."
+          exit 0
+
+      - name: Checkout PR branch
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.head_ref }}
+          fetch-depth: 0
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Run Ceremonial PR Heal
+        run: |
+          chmod +x .github/scripts/ceremonial-pr-heal.sh
+          .github/scripts/ceremonial-pr-heal.sh \
+            "${GITHUB_HEAD_REF}" \
+            "${GITHUB_BASE_REF}" \
+            "${{ github.event.pull_request.number }}"
+
+      - name: Upload full unified diff artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: ceremonial-heal-diff-${{ github.event.pull_request.number }}
+          path: ceremonial-heal-diff-${{ github.event.pull_request.number }}.patch
+          retention-days: 90
