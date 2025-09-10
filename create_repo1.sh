@@ -198,14 +198,16 @@ git push origin "$BRANCH_NAME"
 # === 17. Auto-rerun all workflows ===
 if command -v gh &>/dev/null; then
     echo "🔄 Rerunning latest run for all workflows..."
-    for wf in $(gh workflow list --json name -q '.[].name'); do
+    gh workflow list --json name -q '.[].name' | while IFS= read -r wf; do
       echo "🔄 Rerunning: $wf"
-      gh run list --workflow "$wf" --limit 1 --json databaseId -q '.[].databaseId' | \
-      xargs -I {} gh run rerun {}
+      run_id=$(gh run list --workflow "$wf" --limit 1 --json databaseId -q '.[].databaseId')
+      if [ -n "$run_id" ]; then
+        gh run rerun "$run_id"
+      else
+        echo "⚠️ No runs found for $wf"
+      fi
     done
 else
     echo "⚠️ GitHub CLI not installed — skipping workflow rerun"
 fi
-
-echo "✅ Sovereign bootstrap complete — CI checks running, Pages deploying, Issues backed up."
-# === End of script ===
+echo "✅ Bootstrap complete!"
