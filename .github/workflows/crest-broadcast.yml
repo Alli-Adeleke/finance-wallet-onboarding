@@ -6,6 +6,10 @@ on:
     branches:
       - main
 
+permissions:
+  contents: write
+  pull-requests: write
+
 jobs:
   broadcast:
     runs-on: ubuntu-latest
@@ -23,4 +27,26 @@ jobs:
         run: |
           mkdir -p codex
           echo "Crest broadcast triggered on $(date -u)" > codex/broadcast.log
-          tar -czf codex-broadcast.tar.gz codex
+
+      - name: Upload Codex broadcast log
+        uses: actions/upload-artifact@v4
+        with:
+          name: codex-broadcast-log
+          path: codex/broadcast.log
+
+      - name: Find most recent merged PR
+        id: findpr
+        run: |
+          PR_NUMBER=$(gh pr list --state merged --sort merged --limit 1 --json number --jq '.[0].number')
+          echo "pr_number=$PR_NUMBER" >> $GITHUB_OUTPUT
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Post celebratory comment on PR
+        if: steps.findpr.outputs.pr_number != ''
+        run: |
+          gh pr comment ${{ steps.findpr.outputs.pr_number }} \
+            --body "🎉 **Crest Broadcast Activated** — Ceremony completed at $(date -u)  
+            ✨ Shimmer sent, chime played, Codex log archived, and broadcast artifact uploaded."
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
