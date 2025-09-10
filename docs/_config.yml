@@ -1,5 +1,3 @@
-title: Finance Wallet Codex
-description: Sovereign lineage, crest shimmer, and ceremonial broadcasts
-theme: jekyll-theme-cayman
-include:
-  - _data
+title: "Finance Wallet Onboarding"
+description: "Unified GUI, Admin Console, Roles, Workflows, and Guardrails"
+theme: minima

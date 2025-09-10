@@ -3,7 +3,7 @@ set -euo pipefail
 
 BRANCH_NAME=$(git rev-parse --abbrev-ref HEAD)
 
-echo "🚀 [Crest Shimmer] Starting sovereign create_repo bootstrap with golden restore, Issues backup, Pages fix, and workflow rerun..."
+echo "🚀 [Crest Shimmer] Starting sovereign create_repo bootstrap — golden restore, Issues backup, Pages fix, dynamic CodeQL, and workflow rerun..."
 
 # === 1. Detect Pages source branch ===
 if command -v gh &>/dev/null; then
@@ -65,7 +65,27 @@ else
     pip install -r requirements.txt
 fi
 
-# === 8. CodeQL config ===
+# === 8. Restore additional files from golden branch ===
+git fetch origin
+git checkout "$GOLDEN_BRANCH" -- . || true
+
+# === 9. Detect present languages for CodeQL ===
+LANGS=()
+if find . -type f \( -name "*.js" -o -name "*.ts" \) | grep -q .; then
+    LANGS+=("javascript")
+fi
+if find . -type f -name "*.py" | grep -q .; then
+    LANGS+=("python")
+fi
+if [ ${#LANGS[@]} -eq 0 ]; then
+    echo "⚠️ No JavaScript or Python files found — defaulting to JavaScript for workflow scaffold"
+    LANGS=("javascript")
+fi
+LANG_MATRIX=$(printf "'%s', " "${LANGS[@]}" | sed 's/, $//')
+echo "📜 CodeQL will scan languages: ${LANGS[*]}"
+echo "{\"languages\": [${LANG_MATRIX}]}" > .codex/scan-languages.json
+
+# === 10. CodeQL config ===
 cat > .github/codeql/codeql-config.yml <<'EOF'
 name: "Default CodeQL Config"
 paths:
@@ -75,7 +95,7 @@ paths-ignore:
   - vendor
 EOF
 
-# === 9. Pages config ===
+# === 11. Pages config ===
 cat > docs/_config.yml <<'EOF'
 title: "Finance Wallet Onboarding"
 description: "Unified GUI, Admin Console, Roles, Workflows, and Guardrails"
@@ -87,7 +107,7 @@ cat > docs/index.md <<'EOF'
 This site is built and deployed via GitHub Pages.
 EOF
 
-# === 10. Pages & CodeQL workflow with environment fix ===
+# === 12. Pages & CodeQL workflow ===
 cat > .github/workflows/pages-and-codeql.yml <<EOF
 name: Pages & CodeQL
 
@@ -108,7 +128,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        language: [ 'javascript', 'python' ]
+        language: [ $LANG_MATRIX ]
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -150,64 +170,54 @@ jobs:
         uses: actions/deploy-pages@v4
 EOF
 
-# === 11. Governance & guardrails ===
+# === 13. Governance & guardrails ===
 cat > CODEOWNERS <<'EOF'
 *       @Alli-Adeleke
 EOF
-
 cat > scripts/setup_env_protection.sh <<'EOF'
 #!/usr/bin/env bash
 echo "🔒 Setting up environment protection..."
 EOF
 chmod +x scripts/setup_env_protection.sh
-
 cat > scripts/setup_guardrails.sh <<'EOF'
 #!/usr/bin/env bash
 echo "🛡 Applying repo guardrails..."
 EOF
 chmod +x scripts/setup_guardrails.sh
 
-# === 12. Finance Wallet Onboarding folder ===
+# === 14. Finance Wallet Onboarding folder ===
 if [ -d finance-wallet-onboarding/.git ]; then
     echo "⚠️ Removing embedded .git to make it a normal folder..."
     rm -rf finance-wallet-onboarding/.git
 fi
 echo "# Finance Wallet Onboarding" > "Finance Wallet Onboarding/README.md"
 
-# === 13. Restore additional files from golden branch ===
-git fetch origin
-git checkout "$GOLDEN_BRANCH" -- . || true
-
-# === 14. Backup GitHub Issues ===
+# === 15. Backup GitHub Issues ===
 if command -v gh &>/dev/null; then
     echo "📥 Exporting GitHub Issues..."
-    REPO_FULL=$(gh repo view --json nameWithOwner -q .nameWithOwner)
     gh issue list --state all --limit 1000 --json number,title,state,body,labels,assignees,createdAt,updatedAt > ".codex/issues-backup.json" || echo "⚠️ Could not export issues"
 else
     echo "⚠️ GitHub CLI not installed — skipping Issues backup"
 fi
 
-# === 15. Commit ceremonial bootstrap ===
-git add .
-git commit -m "Bootstrap $BRANCH_NAME with full restoration, CodeQL & Pages fixes, Issues backup, and workflow rerun [crest shimmer]" || true
+# === 16. Disable default CodeQL setup ===
+if command -v gh &>/dev/null; then
+    echo "🛡 Disabling default CodeQL setup..."
+    gh api -X PATCH "repos/$REPO_FULL/code-scanning/default-setup" -f state=disabled || echo "⚠️ Could not disable default CodeQL setup"
+else
+    echo "⚠️ GitHub CLI not installed — skipping default CodeQL disable"
+fi
 
-# === 16. Auto-push to trigger CI ===
+# === 17. Commit ceremonial bootstrap ===
+git add .
+git commit -m "Bootstrap $BRANCH_NAME with full restoration, dynamic CodeQL, Pages fix, Issues backup, and workflow rerun [crest shimmer]" || true
+
+# === 18. Auto-push to trigger CI ===
 echo "⬆️ Pushing $BRANCH_NAME to origin..."
 git push origin "$BRANCH_NAME"
 
-# === 17. Auto-rerun all workflows ===
+# === 19. Auto-rerun all workflows (safe for spaces) ===
 if command -v gh &>/dev/null; then
     echo "🔄 Rerunning latest run for all workflows..."
     gh workflow list --json name -q '.[].name' | while IFS= read -r wf; do
-      echo "🔄 Rerunning: $wf"
-      run_id=$(gh run list --workflow "$wf" --limit 1 --json databaseId -q '.[].databaseId')
-      if [ -n "$run_id" ]; then
-        gh run rerun "$run_id"
-      else
-        echo "⚠️ No runs found for $wf"
-      fi
-    done
-else
-    echo "⚠️ GitHub CLI not installed — skipping workflow rerun"
-fi
-echo "✅ Bootstrap complete!"
+      echo "🔄 Rerunning: $wf
