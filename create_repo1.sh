@@ -206,9 +206,30 @@ if command -v gh &>/dev/null; then
       break
     fi
 
-    echo "❌ Failed workflows detected on attempt $attempt:"
+    echo "❌ Failed workflows detected:"
+    printf '%s\n' "${failed_wfs[@]}" | cut -d'|' -f1
+
+    # Show reasons
     for wf in "${failed_wfs[@]}"; do
-      IFS='|' read -r wf_name wf_id <<< "$wf"
-      echo "- $wf_name (run_id: $wf_id)"
-      show_failure_reasons "$wf_id"
-    done    
+      run_id="${wf##*|}"
+      show_failure_reasons "$run_id"
+    done
+
+    # Fix permissions
+    fix_permissions_recursively
+
+    if [ "$attempt" -lt "$MAX_RETRIES" ]; then
+      echo "🔁 Retrying failed workflows..."
+      for wf in "${failed_wfs[@]}"; do
+        run_id="${wf##*|}"
+        gh run rerun "$run_id" || echo "⚠️ Could not rerun ${wf%%|*}"
+      done
+      echo "⏳ Waiting $BACKOFF_AFTER_RERUN seconds for reruns to start..."
+      sleep $BACKOFF_AFTER_RERUN
+    else
+      echo "🚨 Max retries reached — some workflows are still failing."
+      exit 1
+    fi
+  done
+fi
+echo "🎉 Bootstrap complete. All workflows are passing!"
