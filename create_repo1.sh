@@ -105,14 +105,14 @@ This site is built and deployed via GitHub Pages.
 EOF
 
 # === 11. Pages & CodeQL workflow ===
-cat > .github/workflows/pages-and-codeql.yml <<EOF
+cat > .github/workflows/pages-and-codeql.yml <<'YAML'
 name: Pages & CodeQL
 
 on:
   push:
-    branches: [ $PAGES_BRANCH ]
+    branches: [ PAGES_BRANCH_PLACEHOLDER ]
   pull_request:
-    branches: [ $PAGES_BRANCH ]
+    branches: [ PAGES_BRANCH_PLACEHOLDER ]
 
 jobs:
   analyze:
@@ -125,7 +125,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        language: [ $LANG_MATRIX ]
+        language: [ LANG_MATRIX_PLACEHOLDER ]
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -138,7 +138,7 @@ jobs:
       - run: pip install -r requirements.txt
       - uses: github/codeql-action/init@v3
         with:
-          languages: \${{ matrix.language }}
+          languages: ${{ matrix.language }}
           config-file: ./.github/codeql/codeql-config.yml
       - uses: github/codeql-action/analyze@v3
 
@@ -147,7 +147,7 @@ jobs:
     runs-on: ubuntu-latest
     environment:
       name: github-pages
-      url: \${{ steps.deployment.outputs.page_url }}
+      url: ${{ steps.deployment.outputs.page_url }}
     permissions:
       contents: read
       pages: write
@@ -165,44 +165,50 @@ jobs:
           path: _site
       - id: deployment
         uses: actions/deploy-pages@v4
-EOF
+YAML
+
+# Inject dynamic values into the YAML we just wrote
+sed -i "s/PAGES_BRANCH_PLACEHOLDER/$PAGES_BRANCH/g" .github/workflows/pages-and-codeql.yml
+sed -i "s/LANG_MATRIX_PLACEHOLDER/$LANG_MATRIX/g" .github/workflows/pages-and-codeql.yml
 
 # === 12. Governance & guardrails ===
-cat > CODEOWNERS <<'EOF'
+cat > CODEOWNERS <<'TXT'
 *       @Alli-Adeleke
-EOF
-cat > scripts/setup_env_protection.sh <<'EOF'
+TXT
+
+cat > scripts/setup_env_protection.sh <<'SH'
 #!/usr/bin/env bash
 echo "🔒 Setting up environment protection..."
-EOF
+SH
 chmod +x scripts/setup_env_protection.sh
-cat > scripts/setup_guardrails.sh <<'EOF'
+
+cat > scripts/setup_guardrails.sh <<'SH'
 #!/usr/bin/env bash
 echo "🛡 Applying repo guardrails..."
-EOF
+SH
 chmod +x scripts/setup_guardrails.sh
 
 # === 13. Finance Wallet Onboarding folder ===
 if [ -d finance-wallet-onboarding/.git ]; then
-    echo "⚠️ Removing embedded .git to make it a normal folder..."
-    rm -rf finance-wallet-onboarding/.git
+  echo "⚠️ Removing embedded .git to make it a normal folder..."
+  rm -rf finance-wallet-onboarding/.git
 fi
 echo "# Finance Wallet Onboarding" > "Finance Wallet Onboarding/README.md"
 
 # === 14. Backup GitHub Issues ===
 if command -v gh &>/dev/null; then
-    echo "📥 Exporting GitHub Issues..."
-    gh issue list --state all --limit 1000 --json number,title,state,body,labels,assignees,createdAt,updatedAt > ".codex/issues-backup.json" || echo "⚠️ Could not export issues"
+  echo "📥 Exporting GitHub Issues..."
+  gh issue list --state all --limit 1000 --json number,title,state,body,labels,assignees,createdAt,updatedAt > ".codex/issues-backup.json" || echo "⚠️ Could not export issues"
 else
-    echo "⚠️ GitHub CLI not installed — skipping Issues backup"
+  echo "⚠️ GitHub CLI not installed — skipping Issues backup"
 fi
 
 # === 15. Disable default CodeQL setup ===
 if command -v gh &>/dev/null; then
-    echo "🛡 Disabling default CodeQL setup..."
-    gh api -X PATCH "repos/$REPO_FULL/code-scanning/default-setup" -f state=not-configured || echo "⚠️ Could not disable default CodeQL setup"
+  echo "🛡 Disabling default CodeQL setup..."
+  gh api -X PATCH "repos/$REPO_FULL/code-scanning/default-setup" -f state=not-configured || echo "⚠️ Could not disable default CodeQL setup"
 else
-    echo "⚠️ GitHub CLI not installed — skipping default CodeQL disable"
+  echo "⚠️ GitHub CLI not installed — skipping default CodeQL disable"
 fi
 
 # === 16. Commit ceremonial bootstrap ===
@@ -215,6 +221,19 @@ git push origin "$BRANCH_NAME"
 
 # === 18. Auto-rerun all workflows (safe for spaces) ===
 if command -v gh &>/dev/null; then
-    echo "🔄 Rerunning latest run for all workflows..."
-    gh workflow list --json name -q '.[].name' | while IFS= read -r wf; do
-        echo "🔄 Rerunning: $wf
+  echo "🔄 Rerunning latest run for all workflows..."
+  gh workflow list --json name -q '.[].name' | while IFS= read -r wf; do
+    echo "🔄 Rerunning: $wf"
+    run_id=$(gh run list --workflow "$wf" --limit 1 --json databaseId -q '.[].databaseId')
+    if [ -n "$run_id" ]; then
+      gh run rerun "$run_id" || echo "⚠️ Could not rerun $wf"
+    else
+      echo "⚠️ No runs found for $wf"
+    fi
+  done
+else
+  echo "⚠️ GitHub CLI not installed — skipping workflow rerun"
+fi
+
+exit 0
+# === End of script ===
