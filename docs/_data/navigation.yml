@@ -1,36 +1,40 @@
 # Auto-generated navigation for Finance Wallet Onboarding™
 main:
-  - title: "Applications"
-    children:
   - title: "Documentation"
     children:
-      - title: "_config.yml (updated %Y->-)"
+      - title: "_config.yml (updated %Y->- (grafted, HEAD -> main, origin/main))"
         url: /docs/_config.yml
-      - title: "navigation.yml (updated %Y->- (HEAD -> main))"
+      - title: "navigation.yml (updated %Y->- (grafted, HEAD -> main, origin/main))"
         url: /docs/_data/navigation.yml
-      - title: "index.md (updated %Y->- (HEAD -> main))"
+      - title: "_config.yml (updated %Y->- (grafted, HEAD -> main, origin/main))"
+        url: /docs/admin/_config.yml
+      - title: "navigation.yml (updated %Y->- (grafted, HEAD -> main, origin/main))"
+        url: /docs/admin/_data/navigation.yml
+      - title: "permissions.yml (updated %Y->- (grafted, HEAD -> main, origin/main))"
+        url: /docs/admin/_data/permissions.yml
+      - title: "roles.yml (updated %Y->- (grafted, HEAD -> main, origin/main))"
+        url: /docs/admin/_data/roles.yml
+      - title: "index.md (updated %Y->- (grafted, HEAD -> main, origin/main))"
+        url: /docs/admin/admin/index.md
+      - title: "index.html (updated %Y->- (grafted, HEAD -> main, origin/main))"
+        url: /docs/admin/index.html
+      - title: "index.md (updated %Y->- (grafted, HEAD -> main, origin/main))"
         url: /docs/admin/index.md
-      - title: "index.html (updated %Y->-)"
+      - title: "index.html (updated %Y->- (grafted, HEAD -> main, origin/main))"
         url: /docs/index.html
-      - title: "index.md (updated %Y->- (HEAD -> main))"
+      - title: "index.md (updated %Y->- (grafted, HEAD -> main, origin/main))"
         url: /docs/index.md
   - title: "Automation Scripts"
     children:
-      - title: "bootstrap_full_pages_gui.sh (updated %Y->- (HEAD -> main))"
+      - title: "bootstrap_full_pages_gui.sh (updated %Y->- (grafted, HEAD -> main, origin/main))"
         url: /scripts/bootstrap_full_pages_gui.sh
-      - title: "bootstrap_pages_gui.sh (updated %Y->-)"
+      - title: "bootstrap_pages_gui.sh (updated %Y->- (grafted, HEAD -> main, origin/main))"
         url: /scripts/bootstrap_pages_gui.sh
-      - title: "generate_codex_index.sh (updated )"
+      - title: "generate_codex_index.sh (updated %Y->- (grafted, HEAD -> main, origin/main))"
         url: /scripts/generate_codex_index.sh
-  - title: "Services"
-    children:
-  - title: "Platform"
-    children:
   - title: "Assets & Crests"
     children:
-      - title: "first-crest.svg (updated )"
+      - title: "first-crest.svg (updated %Y->- (grafted, HEAD -> main, origin/main))"
         url: /assets/impact-crests/first-crest.svg
-  - title: "Tools"
-    children:
   - title: "Admin Console"
     url: /admin/index.html
