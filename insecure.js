@@ -1,1 +1,1 @@
-insecure code
+insecureFunction()
