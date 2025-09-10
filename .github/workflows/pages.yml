@@ -23,14 +23,15 @@ jobs:
       - name: Run full Pages GUI bootstrap
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          REPO: ${{ github.repository }}
         run: bash scripts/bootstrap_full_pages_gui.sh
 
-      - name: Commit regenerated GUI
+      - name: Commit regenerated GUI & roles
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add docs/_data/navigation.yml docs/index.md docs/admin/index.md
-          git commit -m "chore: regenerate unified GUI + admin [skip ci]" || echo "No changes"
+          git add docs/_data/navigation.yml docs/_data/roles.yml docs/_data/permissions.yml docs/index.md docs/admin/index.md
+          git commit -m "chore: regenerate GUI + admin + roles [skip ci]" || echo "No changes"
 
       - name: Push regeneration
         run: git push
