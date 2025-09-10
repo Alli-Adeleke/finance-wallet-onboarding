@@ -3,7 +3,7 @@ set -euo pipefail
 
 BRANCH_NAME=$(git rev-parse --abbrev-ref HEAD)
 
-echo "🚀 [Crest Shimmer] Starting sovereign create_repo bootstrap — full scaffold mode, Pages + CodeQL ready, with local build verification..."
+echo "🚀 [Crest Shimmer] Starting sovereign create_repo bootstrap — full scaffold mode, Pages + CodeQL ready, with local build verification and recursive fix..."
 
 # === 1. Detect Pages source branch (default to main if unknown) ===
 if command -v gh &>/dev/null; then
@@ -168,10 +168,17 @@ git commit -m "Bootstrap $BRANCH_NAME with full scaffold, local Pages build veri
 # === 13. Push to trigger CI ===
 git push origin "$BRANCH_NAME"
 
-# === 14. Monitor and retry workflows until all pass ===
+# === 14. Monitor, fix, and retry workflows until all pass ===
 MAX_RETRIES=3
 RETRY_DELAY=60
 BACKOFF_AFTER_RERUN=90
+
+fix_permissions_recursively() {
+    echo "🔧 Fixing file permissions recursively..."
+    find . -type f -name "*.sh" -exec chmod +x {} \;
+    find . -type f -exec chmod u+rw,go+r {} \;
+    find . -type d -exec chmod u+rwx,go+rx {} \;
+}
 
 if command -v gh &>/dev/null; then
   for attempt in $(seq 1 $MAX_RETRIES); do
@@ -179,17 +186,24 @@ if command -v gh &>/dev/null; then
     while gh run list --branch "$BRANCH_NAME" --json status -q '.[].status' | grep -Eq 'in_progress|queued'; do
       sleep $RETRY_DELAY
     done
+
     mapfile -t failed_wfs < <(
       gh run list --branch "$BRANCH_NAME" --limit 50 \
         --json name,conclusion,databaseId,status \
         -q '. | group_by(.name)[] | max_by(.databaseId) | select(.status == "completed") | select(.conclusion != "success") | "\(.name)|\(.databaseId)"'
     )
+
     if [ ${#failed_wfs[@]} -eq 0 ]; then
       echo "✅ All workflows passed on attempt $attempt"
       break
     fi
+
     echo "❌ Failed workflows detected:"
     printf '%s\n' "${failed_wfs[@]}" | cut -d'|' -f1
+
+    # Fix permissions recursively before retry
+    fix_permissions_recursively
+
     if [ "$attempt" -lt "$MAX_RETRIES" ]; then
       echo "🔁 Retrying failed workflows..."
       for wf in "${failed_wfs[@]}"; do
@@ -199,9 +213,4 @@ if command -v gh &>/dev/null; then
       echo "⏳ Waiting $BACKOFF_AFTER_RERUN seconds for reruns to start..."
       sleep $BACKOFF_AFTER_RERUN
     else
-      echo "🚨 Max retries reached — some workflows are still failing."
-      exit 1
-    fi
-  done
-fi
-echo "🎉 [Crest Shimmer] Sovereign create_repo bootstrap complete. All systems go!"
+      echo "🚨 Max retries reached — some workflows
