@@ -3,7 +3,7 @@ set -euo pipefail
 
 BRANCH_NAME=$(git rev-parse --abbrev-ref HEAD)
 
-echo "🚀 [Crest Shimmer] Starting sovereign create_repo bootstrap — full scaffold mode, Pages + CodeQL ready, with local build verification and recursive fix..."
+echo "🚀 [Crest Shimmer] Starting sovereign create_repo bootstrap — full scaffold mode, Pages + CodeQL ready, with local build verification, diagnostics, and recursive fix..."
 
 # === 1. Detect Pages source branch (default to main if unknown) ===
 if command -v gh &>/dev/null; then
@@ -22,27 +22,24 @@ git checkout "$PAGES_BRANCH" -- . || true
 # === 3. Scaffold all required Pages + workflow files ===
 echo "🛠 Creating required Pages and workflow structure..."
 
-# Pages content
-mkdir -p docs/admin docs/assets docs/_data
+mkdir -p docs/admin docs/assets docs/_data src scripts _site .github/codeql .github/workflows .codex
+
 cat > docs/_config.yml <<'YAML'
 title: "Finance Wallet Onboarding"
 description: "Unified GUI, Admin Console, Roles, Workflows, and Guardrails"
 theme: minima
 YAML
+
 echo "# Welcome to Finance Wallet Onboarding" > docs/index.md
 echo "# Admin Console" > docs/admin/index.md
 echo "Assets go here" > docs/assets/placeholder.txt
+
 for datafile in navigation.yml permissions.yml roles.yml; do
   echo "# $datafile" > "docs/_data/$datafile"
 done
 
-# CodeQL language scaffolding
-mkdir -p src scripts
 echo "console.log('Hello from JavaScript');" > src/index.js
 echo "print('Hello from Python')" > scripts/main.py
-
-# Workflow-required folders
-mkdir -p _site .github/codeql .github/workflows .codex
 
 # === 4. Dependencies ===
 [ -f package.json ] && ( [ -f package-lock.json ] && npm ci || npm install --package-lock ) || echo "⚠️ No package.json"
@@ -168,7 +165,7 @@ git commit -m "Bootstrap $BRANCH_NAME with full scaffold, local Pages build veri
 # === 13. Push to trigger CI ===
 git push origin "$BRANCH_NAME"
 
-# === 14. Monitor, fix, and retry workflows until all pass ===
+# === 14. Monitor, diagnose, fix, and retry workflows until all pass ===
 MAX_RETRIES=3
 RETRY_DELAY=60
 BACKOFF_AFTER_RERUN=90
@@ -178,6 +175,17 @@ fix_permissions_recursively() {
     find . -type f -name "*.sh" -exec chmod +x {} \;
     find . -type f -exec chmod u+rw,go+r {} \;
     find . -type d -exec chmod u+rwx,go+rx {} \;
+}
+
+show_failure_reasons() {
+    local run_id="$1"
+    echo "📋 Fetching failure logs for run_id: $run_id"
+    mapfile -t jobs < <(gh run view "$run_id" --json jobs -q '.jobs[].name')
+    for job in "${jobs[@]}"; do
+        echo "🔍 Job: $job"
+        gh run view "$run_id" --job "$job" --log | tail -n 20
+        echo "----------------------------------------"
+    done
 }
 
 if command -v gh &>/dev/null; then
@@ -198,23 +206,9 @@ if command -v gh &>/dev/null; then
       break
     fi
 
-    echo "❌ Failed workflows detected:"
-    printf '%s\n' "${failed_wfs[@]}" | cut -d'|' -f1
-
-    fix_permissions_recursively
-
-    if [ "$attempt" -lt "$MAX_RETRIES" ]; then
-      echo "🔁 Retrying failed workflows..."
-      for wf in "${failed_wfs[@]}"; do
-        run_id="${wf##*|}"
-        gh run rerun "$run_id" || echo "⚠️ Could not rerun ${wf%%|*}"
-      done
-      echo "⏳ Waiting $BACKOFF_AFTER_RERUN seconds for reruns to start..."
-      sleep $BACKOFF_AFTER_RERUN
-    else
-      echo "🚨 Max retries reached — some workflows are still failing."
-      exit 1
-    fi
-  done
-fi
-echo "🎉 All workflows completed successfully. Bootstrap process finished."
+    echo "❌ Failed workflows detected on attempt $attempt:"
+    for wf in "${failed_wfs[@]}"; do
+      IFS='|' read -r wf_name wf_id <<< "$wf"
+      echo "- $wf_name (run_id: $wf_id)"
+      show_failure_reasons "$wf_id"
+    done    
