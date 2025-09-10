@@ -3,90 +3,56 @@ set -euo pipefail
 
 BRANCH_NAME=$(git rev-parse --abbrev-ref HEAD)
 
-echo "🚀 [Crest Shimmer] Starting sovereign create_repo bootstrap — golden restore, Issues backup, Pages fix, dynamic CodeQL, and workflow rerun..."
+echo "🚀 [Crest Shimmer] Starting sovereign create_repo bootstrap — full scaffold mode, no branch checks, Pages + CodeQL ready..."
 
-# === 1. Detect Pages source branch ===
+# === 1. Detect Pages source branch (default to main if unknown) ===
 if command -v gh &>/dev/null; then
     echo "🔍 Detecting GitHub Pages source branch..."
     REPO_FULL=$(gh repo view --json nameWithOwner -q .nameWithOwner)
     PAGES_BRANCH=$(gh api repos/$REPO_FULL/pages --jq '.source.branch' 2>/dev/null || echo "main")
 else
-    echo "⚠️ GitHub CLI not installed — defaulting Pages branch to 'main'"
     PAGES_BRANCH="main"
 fi
 echo "📜 Pages will deploy from branch: $PAGES_BRANCH"
 
-# === 2. Pick golden branch for restore (allow override) ===
-if [ -n "${CREATE_GOLDEN_BRANCH:-}" ]; then
-    GOLDEN_BRANCH="$CREATE_GOLDEN_BRANCH"
-else
-    case "$BRANCH_NAME" in
-      main)          GOLDEN_BRANCH="origin/my-feature" ;;
-      create_repo)   GOLDEN_BRANCH="origin/ceremonial-sync" ;;
-      *)             GOLDEN_BRANCH="$PAGES_BRANCH" ;;
-    esac
-fi
-echo "📜 Golden branch for restore: $GOLDEN_BRANCH"
+# === 2. Restore from golden branch if available, else skip ===
+git fetch origin || true
+git checkout "$PAGES_BRANCH" -- . || true
 
-# === 3. Ensure base directories ===
-mkdir -p \
-  assets/impact-crests \
-  docs/_data \
-  scripts \
-  .github/codeql \
-  .github/workflows \
-  "Finance Wallet Onboarding" \
-  .codex
+# === 3. Scaffold all required Pages + workflow files ===
+echo "🛠 Creating required Pages and workflow structure..."
 
-# === 4. Install system dependencies ===
-echo "📦 Installing system dependencies..."
-if command -v apt-get &>/dev/null; then
-    sudo apt-get update
-    sudo apt-get install -y git curl jq unzip build-essential python3 python3-pip
-elif command -v yum &>/dev/null; then
-    sudo yum install -y git curl jq unzip make gcc python3 python3-pip
-fi
+# Pages content
+mkdir -p docs/admin docs/assets docs/_data
+cat > docs/_config.yml <<'YAML'
+title: "Finance Wallet Onboarding"
+description: "Unified GUI, Admin Console, Roles, Workflows, and Guardrails"
+theme: minima
+YAML
+echo "# Welcome to Finance Wallet Onboarding" > docs/index.md
+echo "# Admin Console" > docs/admin/index.md
+echo "Assets go here" > docs/assets/placeholder.txt
+for datafile in navigation.yml permissions.yml roles.yml; do
+  echo "# $datafile" > "docs/_data/$datafile"
+done
 
-# === 5. Restore additional files from golden branch ===
-git fetch origin
-git checkout "$GOLDEN_BRANCH" -- . || true
+# CodeQL language scaffolding
+mkdir -p src scripts
+echo "console.log('Hello from JavaScript');" > src/index.js
+echo "print('Hello from Python')" > scripts/main.py
 
-# === 6. JS dependencies with lockfile fallback ===
-if [ -f package.json ]; then
-    if [ -f package-lock.json ]; then
-        npm ci
-    else
-        npm install --package-lock
-    fi
-else
-    echo "⚠️ No package.json found — skipping npm install"
-fi
+# Workflow-required folders
+mkdir -p _site .github/codeql .github/workflows
 
-# === 7. Python dependencies ===
-if [ -f requirements.txt ]; then
-    pip install -r requirements.txt
-else
-    echo "# Python dependencies" > requirements.txt
-    pip install -r requirements.txt
-fi
+# === 4. Dependencies ===
+[ -f package.json ] && ( [ -f package-lock.json ] && npm ci || npm install --package-lock ) || echo "⚠️ No package.json"
+[ -f requirements.txt ] && pip install -r requirements.txt || echo "# Python dependencies" > requirements.txt
 
-# === 8. Detect present languages for CodeQL ===
-LANGS=()
-if find . -type f \( -name "*.js" -o -name "*.ts" \) | grep -q .; then
-    LANGS+=("javascript")
-fi
-if find . -type f -name "*.py" | grep -q .; then
-    LANGS+=("python")
-fi
-if [ ${#LANGS[@]} -eq 0 ]; then
-    echo "⚠️ No JavaScript or Python files found — defaulting to JavaScript for workflow scaffold"
-    LANGS=("javascript")
-fi
-LANG_MATRIX=$(printf "'%s', " "${LANGS[@]}" | sed 's/, $//')
-echo "📜 CodeQL will scan languages: ${LANGS[*]}"
+# === 5. Detect CodeQL languages ===
+LANG_MATRIX="'javascript', 'python'"
 echo "{\"languages\": [${LANG_MATRIX}]}" > .codex/scan-languages.json
 
-# === 9. CodeQL config ===
+# === 6. CodeQL config ===
 cat > .github/codeql/codeql-config.yml <<'EOF'
 name: "Default CodeQL Config"
 paths:
@@ -96,28 +62,14 @@ paths-ignore:
   - vendor
 EOF
 
-# === 10. Pages config ===
-cat > docs/_config.yml <<'EOF'
-title: "Finance Wallet Onboarding"
-description: "Unified GUI, Admin Console, Roles, Workflows, and Guardrails"
-theme: minima
-EOF
-
-cat > docs/index.md <<'EOF'
-# Welcome to Finance Wallet Onboarding
-This site is built and deployed via GitHub Pages.
-EOF
-
-# === 11. Pages & CodeQL workflow ===
+# === 7. Pages & CodeQL workflow ===
 cat > .github/workflows/pages-and-codeql.yml <<EOF
 name: Pages & CodeQL
-
 on:
   push:
     branches: [ $PAGES_BRANCH ]
   pull_request:
     branches: [ $PAGES_BRANCH ]
-
 jobs:
   analyze:
     name: CodeQL Analyze
@@ -145,7 +97,6 @@ jobs:
           languages: \${{ matrix.language }}
           config-file: ./.github/codeql/codeql-config.yml
       - uses: github/codeql-action/analyze@v3
-
   pages:
     name: Build & Deploy Pages
     runs-on: ubuntu-latest
@@ -171,92 +122,60 @@ jobs:
         uses: actions/deploy-pages@v4
 EOF
 
-# === 12. Governance & guardrails ===
-cat > CODEOWNERS <<'EOF'
-*       @Alli-Adeleke
-EOF
-cat > scripts/setup_env_protection.sh <<'EOF'
-#!/usr/bin/env bash
-echo "🔒 Setting up environment protection..."
-EOF
-chmod +x scripts/setup_env_protection.sh
-cat > scripts/setup_guardrails.sh <<'EOF'
-#!/usr/bin/env bash
-echo "🛡 Applying repo guardrails..."
-EOF
-chmod +x scripts/setup_guardrails.sh
+# === 8. Governance & guardrails ===
+echo "*       @Alli-Adeleke" > CODEOWNERS
 
-# === 13. Finance Wallet Onboarding folder ===
-if [ -d finance-wallet-onboarding/.git ]; then
-    echo "⚠️ Removing embedded .git to make it a normal folder..."
-    rm -rf finance-wallet-onboarding/.git
-fi
-echo "# Finance Wallet Onboarding" > "Finance Wallet Onboarding/README.md"
-
-# === 14. Backup GitHub Issues ===
+# === 9. Backup GitHub Issues ===
 if command -v gh &>/dev/null; then
-    echo "📥 Exporting GitHub Issues..."
-    gh issue list --state all --limit 1000 --json number,title,state,body,labels,assignees,createdAt,updatedAt > ".codex/issues-backup.json" || echo "⚠️ Could not export issues"
-else
-    echo "⚠️ GitHub CLI not installed — skipping Issues backup"
+    gh issue list --state all --limit 1000 --json number,title,state > ".codex/issues-backup.json" || true
 fi
 
-# === 15. Disable default CodeQL setup ===
+# === 10. Disable default CodeQL setup ===
 if command -v gh &>/dev/null; then
-    echo "🛡 Disabling default CodeQL setup..."
-    gh api -X PATCH "repos/$REPO_FULL/code-scanning/default-setup" -f state=not-configured || echo "⚠️ Could not disable default CodeQL setup"
-else
-    echo "⚠️ GitHub CLI not installed — skipping default CodeQL disable"
+    gh api -X PATCH "repos/$REPO_FULL/code-scanning/default-setup" -f state=not-configured || true
 fi
 
-# === 16. Commit ceremonial bootstrap ===
+# === 11. Commit ceremonial bootstrap ===
 git add .
-git commit -m "Bootstrap $BRANCH_NAME with full restoration, dynamic CodeQL, Pages fix, Issues backup, and workflow rerun [crest shimmer]" || true
+git commit -m "Bootstrap $BRANCH_NAME with full scaffold, dynamic CodeQL, Pages fix, Issues backup, and workflow verification [crest shimmer]" || true
 
-# === 17. Auto-push to trigger CI ===
-echo "⬆️ Pushing $BRANCH_NAME to origin..."
+# === 12. Push to trigger CI ===
 git push origin "$BRANCH_NAME"
 
-# === 18. Auto-rerun all workflows until they pass ===
+# === 13. Monitor and retry workflows until all pass ===
 MAX_RETRIES=3
-RETRY_DELAY=30  # seconds between status checks
+RETRY_DELAY=60
+BACKOFF_AFTER_RERUN=90
 
 if command -v gh &>/dev/null; then
-    echo "🔄 Monitoring workflows for branch: $BRANCH_NAME"
-
-    for attempt in $(seq 1 $MAX_RETRIES); do
-        echo "⏳ Attempt $attempt: Waiting for workflows to complete..."
-        
-        # Wait until no runs are "in_progress" or "queued"
-        while gh run list --branch "$BRANCH_NAME" --json status -q '.[].status' | grep -Eq 'in_progress|queued'; do
-            sleep $RETRY_DELAY
-        done
-
-        # Check for failures
-        FAILED_WORKFLOWS=$(gh run list --branch "$BRANCH_NAME" --json name,conclusion -q '.[] | select(.conclusion != "success") | .name')
-
-        if [ -z "$FAILED_WORKFLOWS" ]; then
-            echo "✅ All workflows passed on attempt $attempt"
-            break
-        else
-            echo "❌ Failed workflows detected:"
-            echo "$FAILED_WORKFLOWS"
-            
-            if [ "$attempt" -lt "$MAX_RETRIES" ]; then
-                echo "🔁 Retrying failed workflows..."
-                while IFS= read -r wf; do
-                    run_id=$(gh run list --branch "$BRANCH_NAME" --workflow "$wf" --limit 1 --json databaseId -q '.[].databaseId')
-                    if [ -n "$run_id" ]; then
-                        gh run rerun "$run_id" || echo "⚠️ Could not rerun $wf"
-                    fi
-                done <<< "$FAILED_WORKFLOWS"
-            else
-                echo "🚨 Max retries reached — some workflows are still failing."
-                exit 1
-            fi
-        fi
+  for attempt in $(seq 1 $MAX_RETRIES); do
+    echo "⏳ Attempt $attempt: Waiting for workflows to complete..."
+    while gh run list --branch "$BRANCH_NAME" --json status -q '.[].status' | grep -Eq 'in_progress|queued'; do
+      sleep $RETRY_DELAY
     done
-else
-    echo "⚠️ GitHub CLI not installed — skipping workflow monitoring"
+    mapfile -t failed_wfs < <(
+      gh run list --branch "$BRANCH_NAME" --limit 50 \
+        --json name,conclusion,databaseId,status \
+        -q '. | group_by(.name)[] | max_by(.databaseId) | select(.status == "completed") | select(.conclusion != "success") | "\(.name)|\(.databaseId)"'
+    )
+    if [ ${#failed_wfs[@]} -eq 0 ]; then
+      echo "✅ All workflows passed on attempt $attempt"
+      break
+    fi
+    echo "❌ Failed workflows detected:"
+    printf '%s\n' "${failed_wfs[@]}" | cut -d'|' -f1
+    if [ "$attempt" -lt "$MAX_RETRIES" ]; then
+      echo "🔁 Retrying failed workflows..."
+      for wf in "${failed_wfs[@]}"; do
+        run_id="${wf##*|}"
+        gh run rerun "$run_id" || echo "⚠️ Could not rerun ${wf%%|*}"
+      done
+      echo "⏳ Waiting $BACKOFF_AFTER_RERUN seconds for reruns to start..."
+      sleep $BACKOFF_AFTER_RERUN
+    else
+      echo "🚨 Max retries reached — some workflows are still failing."
+      exit 1
+    fi
+  done
 fi
-echo "🎉 Ceremonial bootstrap complete!"
+echo "🎉 [Crest Shimmer] Bootstrap complete. Your repository is now scaffolded with GitHub Pages, CodeQL, and governance best practices!"

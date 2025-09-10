@@ -1,11 +1,9 @@
 name: Pages & CodeQL
-
 on:
   push:
     branches: [ main ]
   pull_request:
     branches: [ main ]
-
 jobs:
   analyze:
     name: CodeQL Analyze
@@ -17,7 +15,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        language: [ 'javascript' ]
+        language: [ 'javascript', 'python' ]
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -33,7 +31,6 @@ jobs:
           languages: ${{ matrix.language }}
           config-file: ./.github/codeql/codeql-config.yml
       - uses: github/codeql-action/analyze@v3
-
   pages:
     name: Build & Deploy Pages
     runs-on: ubuntu-latest
