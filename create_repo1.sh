@@ -43,18 +43,19 @@ elif command -v yum &>/dev/null; then
     sudo yum install -y git curl jq unzip make gcc python3 python3-pip
 fi
 
-# === 5. Install Node.js & npm ===
-if ! command -v node &>/dev/null; then
-    echo "⬇️ Installing Node.js..."
-    curl -fsSL https://deb.nodesource.com/setup_20.x | sudo -E bash -
-    sudo apt-get install -y nodejs
-fi
+# === 5. Restore additional files from golden branch ===
+git fetch origin
+git checkout "$GOLDEN_BRANCH" -- . || true
 
 # === 6. JS dependencies with lockfile fallback ===
-if [ -f package-lock.json ]; then
-    npm ci
+if [ -f package.json ]; then
+    if [ -f package-lock.json ]; then
+        npm ci
+    else
+        npm install --package-lock
+    fi
 else
-    npm install --package-lock
+    echo "⚠️ No package.json found — skipping npm install"
 fi
 
 # === 7. Python dependencies ===
@@ -65,11 +66,7 @@ else
     pip install -r requirements.txt
 fi
 
-# === 8. Restore additional files from golden branch ===
-git fetch origin
-git checkout "$GOLDEN_BRANCH" -- . || true
-
-# === 9. Detect present languages for CodeQL ===
+# === 8. Detect present languages for CodeQL ===
 LANGS=()
 if find . -type f \( -name "*.js" -o -name "*.ts" \) | grep -q .; then
     LANGS+=("javascript")
@@ -85,7 +82,7 @@ LANG_MATRIX=$(printf "'%s', " "${LANGS[@]}" | sed 's/, $//')
 echo "📜 CodeQL will scan languages: ${LANGS[*]}"
 echo "{\"languages\": [${LANG_MATRIX}]}" > .codex/scan-languages.json
 
-# === 10. CodeQL config ===
+# === 9. CodeQL config ===
 cat > .github/codeql/codeql-config.yml <<'EOF'
 name: "Default CodeQL Config"
 paths:
@@ -95,7 +92,7 @@ paths-ignore:
   - vendor
 EOF
 
-# === 11. Pages config ===
+# === 10. Pages config ===
 cat > docs/_config.yml <<'EOF'
 title: "Finance Wallet Onboarding"
 description: "Unified GUI, Admin Console, Roles, Workflows, and Guardrails"
@@ -107,7 +104,7 @@ cat > docs/index.md <<'EOF'
 This site is built and deployed via GitHub Pages.
 EOF
 
-# === 12. Pages & CodeQL workflow ===
+# === 11. Pages & CodeQL workflow ===
 cat > .github/workflows/pages-and-codeql.yml <<EOF
 name: Pages & CodeQL
 
@@ -170,7 +167,7 @@ jobs:
         uses: actions/deploy-pages@v4
 EOF
 
-# === 13. Governance & guardrails ===
+# === 12. Governance & guardrails ===
 cat > CODEOWNERS <<'EOF'
 *       @Alli-Adeleke
 EOF
@@ -185,14 +182,14 @@ echo "🛡 Applying repo guardrails..."
 EOF
 chmod +x scripts/setup_guardrails.sh
 
-# === 14. Finance Wallet Onboarding folder ===
+# === 13. Finance Wallet Onboarding folder ===
 if [ -d finance-wallet-onboarding/.git ]; then
     echo "⚠️ Removing embedded .git to make it a normal folder..."
     rm -rf finance-wallet-onboarding/.git
 fi
 echo "# Finance Wallet Onboarding" > "Finance Wallet Onboarding/README.md"
 
-# === 15. Backup GitHub Issues ===
+# === 14. Backup GitHub Issues ===
 if command -v gh &>/dev/null; then
     echo "📥 Exporting GitHub Issues..."
     gh issue list --state all --limit 1000 --json number,title,state,body,labels,assignees,createdAt,updatedAt > ".codex/issues-backup.json" || echo "⚠️ Could not export issues"
@@ -200,24 +197,24 @@ else
     echo "⚠️ GitHub CLI not installed — skipping Issues backup"
 fi
 
-# === 16. Disable default CodeQL setup ===
+# === 15. Disable default CodeQL setup ===
 if command -v gh &>/dev/null; then
     echo "🛡 Disabling default CodeQL setup..."
-    gh api -X PATCH "repos/$REPO_FULL/code-scanning/default-setup" -f state=disabled || echo "⚠️ Could not disable default CodeQL setup"
+    gh api -X PATCH "repos/$REPO_FULL/code-scanning/default-setup" -f state=not-configured || echo "⚠️ Could not disable default CodeQL setup"
 else
     echo "⚠️ GitHub CLI not installed — skipping default CodeQL disable"
 fi
 
-# === 17. Commit ceremonial bootstrap ===
+# === 16. Commit ceremonial bootstrap ===
 git add .
 git commit -m "Bootstrap $BRANCH_NAME with full restoration, dynamic CodeQL, Pages fix, Issues backup, and workflow rerun [crest shimmer]" || true
 
-# === 18. Auto-push to trigger CI ===
+# === 17. Auto-push to trigger CI ===
 echo "⬆️ Pushing $BRANCH_NAME to origin..."
 git push origin "$BRANCH_NAME"
 
-# === 19. Auto-rerun all workflows (safe for spaces) ===
+# === 18. Auto-rerun all workflows (safe for spaces) ===
 if command -v gh &>/dev/null; then
     echo "🔄 Rerunning latest run for all workflows..."
     gh workflow list --json name -q '.[].name' | while IFS= read -r wf; do
-      echo "🔄 Rerunning: $wf
+        echo "🔄 Rerunning: $wf
