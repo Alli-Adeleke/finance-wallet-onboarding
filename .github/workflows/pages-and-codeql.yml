@@ -2,66 +2,54 @@ name: Pages & CodeQL
 
 on:
   push:
-    branches: [ main ]
+    branches: [ main, create_repo ]
   pull_request:
-    branches: [ main ]
-
-permissions:
-  contents: read
-  pages: write
-  id-token: write
-  security-events: write
+    branches: [ main, create_repo ]
 
 jobs:
-  # --- GitHub Pages Build & Deploy ---
-  build-deploy:
+  analyze:
+    name: CodeQL Analyze
     runs-on: ubuntu-latest
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-
-      # Build your site (replace with your actual build steps)
-      - name: Build site
-        run: |
-          mkdir public
-          echo "<h1>Pages deployment test</h1>" > public/index.html
-
-      - name: Upload artifact
-        uses: actions/upload-pages-artifact@v3
-        with:
-          path: public
-
-  deploy:
-    needs: build-deploy
-    runs-on: ubuntu-latest
-    environment:
-      name: github-pages
-      url: ${{ steps.deployment.outputs.page_url }}
-    steps:
-      - name: Deploy to GitHub Pages
-        id: deployment
-        uses: actions/deploy-pages@v4
-
-  # --- CodeQL Analysis ---
-  codeql:
-    runs-on: ubuntu-latest
+    permissions:
+      security-events: write
+      actions: read
+      contents: read
     strategy:
       fail-fast: false
       matrix:
-        language: [ 'javascript', 'python' ] # adjust to your repo's languages
+        language: [ 'javascript', 'python' ]
     steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
-
-      - name: Initialize CodeQL
-        uses: github/codeql-action/init@v3
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      - run: npm ci || npm install
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.x'
+      - run: pip install -r requirements.txt
+      - uses: github/codeql-action/init@v3
         with:
           languages: ${{ matrix.language }}
+          config-file: ./.github/codeql/codeql-config.yml
+      - uses: github/codeql-action/analyze@v3
 
-      - name: Autobuild
-        uses: github/codeql-action/autobuild@v3
-
-      - name: Perform CodeQL Analysis
-        uses: github/codeql-action/analyze@v3
+  pages:
+    name: Build & Deploy Pages
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pages: write
+      id-token: write
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
         with:
-          category: '/language:${{ matrix.language }}'    
+          node-version: '20'
+      - run: npm ci || npm install
+      - run: mkdir -p _site && cp -r docs/* _site/
+      - uses: actions/configure-pages@v4
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: _site
+      - uses: actions/deploy-pages@v4
