@@ -3,7 +3,7 @@ set -euo pipefail
 
 BRANCH_NAME=$(git rev-parse --abbrev-ref HEAD)
 
-echo "🚀 [Crest Shimmer] Starting sovereign create_repo bootstrap — full scaffold mode, no branch checks, Pages + CodeQL ready..."
+echo "🚀 [Crest Shimmer] Starting sovereign create_repo bootstrap — full scaffold mode, Pages + CodeQL ready, with local build verification..."
 
 # === 1. Detect Pages source branch (default to main if unknown) ===
 if command -v gh &>/dev/null; then
@@ -15,7 +15,7 @@ else
 fi
 echo "📜 Pages will deploy from branch: $PAGES_BRANCH"
 
-# === 2. Restore from golden branch if available, else skip ===
+# === 2. Try to restore from Pages branch if exists, else skip ===
 git fetch origin || true
 git checkout "$PAGES_BRANCH" -- . || true
 
@@ -42,7 +42,7 @@ echo "console.log('Hello from JavaScript');" > src/index.js
 echo "print('Hello from Python')" > scripts/main.py
 
 # Workflow-required folders
-mkdir -p _site .github/codeql .github/workflows
+mkdir -p _site .github/codeql .github/workflows .codex
 
 # === 4. Dependencies ===
 [ -f package.json ] && ( [ -f package-lock.json ] && npm ci || npm install --package-lock ) || echo "⚠️ No package.json"
@@ -135,14 +135,40 @@ if command -v gh &>/dev/null; then
     gh api -X PATCH "repos/$REPO_FULL/code-scanning/default-setup" -f state=not-configured || true
 fi
 
-# === 11. Commit ceremonial bootstrap ===
-git add .
-git commit -m "Bootstrap $BRANCH_NAME with full scaffold, dynamic CodeQL, Pages fix, Issues backup, and workflow verification [crest shimmer]" || true
+# === 11. Local Pages build test ===
+echo "🧪 Running local GitHub Pages build test..."
+if ! command -v bundle &>/dev/null; then
+    echo "📦 Installing Ruby and Bundler for local build..."
+    if command -v apt-get &>/dev/null; then
+        sudo apt-get install -y ruby-full build-essential zlib1g-dev
+    elif command -v yum &>/dev/null; then
+        sudo yum install -y ruby ruby-devel make gcc
+    fi
+    gem install bundler jekyll
+fi
+if [ ! -f docs/Gemfile ]; then
+    cat > docs/Gemfile <<'RUBY'
+source "https://rubygems.org"
+gem "github-pages", group: :jekyll_plugins
+RUBY
+fi
+cd docs
+bundle install
+if ! bundle exec jekyll build --destination ../_site; then
+    echo "🚨 Local Pages build failed. Fix errors before pushing."
+    exit 1
+fi
+cd ..
+echo "✅ Local Pages build succeeded."
 
-# === 12. Push to trigger CI ===
+# === 12. Commit ceremonial bootstrap ===
+git add .
+git commit -m "Bootstrap $BRANCH_NAME with full scaffold, local Pages build verified, dynamic CodeQL, Issues backup, and workflow verification [crest shimmer]" || true
+
+# === 13. Push to trigger CI ===
 git push origin "$BRANCH_NAME"
 
-# === 13. Monitor and retry workflows until all pass ===
+# === 14. Monitor and retry workflows until all pass ===
 MAX_RETRIES=3
 RETRY_DELAY=60
 BACKOFF_AFTER_RERUN=90
@@ -178,4 +204,4 @@ if command -v gh &>/dev/null; then
     fi
   done
 fi
-echo "🎉 [Crest Shimmer] Bootstrap complete. Your repository is now scaffolded with GitHub Pages, CodeQL, and governance best practices!"
+echo "🎉 [Crest Shimmer] Sovereign create_repo bootstrap complete. All systems go!"
