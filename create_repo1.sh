@@ -117,6 +117,9 @@ jobs:
   pages:
     name: Build & Deploy Pages
     runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
     permissions:
       contents: read
       pages: write
@@ -132,8 +135,10 @@ jobs:
       - uses: actions/upload-pages-artifact@v3
         with:
           path: _site
-      - uses: actions/deploy-pages@v4
+      - id: deployment
+        uses: actions/deploy-pages@v4
 EOF
+
 
 # === 10. Governance & guardrails ===
 cat > CODEOWNERS <<'EOF'
