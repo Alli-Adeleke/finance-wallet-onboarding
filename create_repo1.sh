@@ -201,7 +201,6 @@ if command -v gh &>/dev/null; then
     echo "❌ Failed workflows detected:"
     printf '%s\n' "${failed_wfs[@]}" | cut -d'|' -f1
 
-    # Fix permissions recursively before retry
     fix_permissions_recursively
 
     if [ "$attempt" -lt "$MAX_RETRIES" ]; then
@@ -213,4 +212,9 @@ if command -v gh &>/dev/null; then
       echo "⏳ Waiting $BACKOFF_AFTER_RERUN seconds for reruns to start..."
       sleep $BACKOFF_AFTER_RERUN
     else
-      echo "🚨 Max retries reached — some workflows
+      echo "🚨 Max retries reached — some workflows are still failing."
+      exit 1
+    fi
+  done
+fi
+echo "🎉 All workflows completed successfully. Bootstrap process finished."
