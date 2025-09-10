@@ -3,7 +3,7 @@ set -euo pipefail
 
 BRANCH_NAME=$(git rev-parse --abbrev-ref HEAD)
 
-echo "🚀 [Crest Shimmer] Starting sovereign create_repo bootstrap with branch‑aware golden restore..."
+echo "🚀 [Crest Shimmer] Starting sovereign create_repo bootstrap with branch‑aware golden restore + Issues backup..."
 
 # === 1. Pick golden branch based on current branch ===
 case "$BRANCH_NAME" in
@@ -20,7 +20,8 @@ mkdir -p \
   scripts \
   .github/codeql \
   .github/workflows \
-  "Finance Wallet Onboarding"
+  "Finance Wallet Onboarding" \
+  .codex
 
 # === 3. Install system dependencies ===
 echo "📦 Installing system dependencies..."
@@ -158,16 +159,25 @@ if [ -d finance-wallet-onboarding/.git ]; then
 fi
 echo "# Finance Wallet Onboarding" > "Finance Wallet Onboarding/README.md"
 
-# === 12. Restore additional files (~88 total) from golden branch ===
+# === 12. Restore additional files from golden branch ===
 git fetch origin
 git checkout "$GOLDEN_BRANCH" -- . || true
 
-# === 13. Commit ceremonial bootstrap ===
-git add .
-git commit -m "Bootstrap $BRANCH_NAME with full restoration, CodeQL & Pages fixes [crest shimmer]" || true
+# === 13. Backup GitHub Issues ===
+if command -v gh &>/dev/null; then
+    echo "📥 Exporting GitHub Issues..."
+    REPO_NAME=$(basename -s .git "$(git config --get remote.origin.url)")
+    gh issue list --state all --limit 1000 --json number,title,state,body,labels,assignees,createdAt,updatedAt > ".codex/issues-backup.json" || echo "⚠️ Could not export issues"
+else
+    echo "⚠️ GitHub CLI not installed — skipping Issues backup"
+fi
 
-# === 14. Auto-push to trigger CI ===
+# === 14. Commit ceremonial bootstrap ===
+git add .
+git commit -m "Bootstrap $BRANCH_NAME with full restoration, CodeQL & Pages fixes, and Issues backup [crest shimmer]" || true
+
+# === 15. Auto-push to trigger CI ===
 echo "⬆️ Pushing $BRANCH_NAME to origin..."
 git push origin "$BRANCH_NAME"
 
-echo "✅ Sovereign bootstrap complete — CI checks should now run and Pages should render."
+echo "✅ Sovereign bootstrap complete — CI checks should now run, Pages should render, and Issues are backed up in .codex/issues-backup.json"
