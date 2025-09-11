@@ -1,5 +1,8 @@
 title: Finance Wallet Codex
 description: Sovereign lineage, crest shimmer, and ceremonial broadcasts
 theme: jekyll-theme-cayman
+<<<<<<< HEAD
 include:
   - _data
+=======
+>>>>>>> 6e08356 (Initial commit: scaffold repo)
