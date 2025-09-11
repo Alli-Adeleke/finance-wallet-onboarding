@@ -26,12 +26,62 @@ main:
         url: /docs/index.md
   - title: "Automation Scripts"
     children:
+      - title: "atm-action.sh (updated %Y->- (grafted, HEAD -> main, origin/main))"
+        url: /scripts/atm-action.sh
+      - title: "bind-lease.sh (updated %Y->- (grafted, HEAD -> main, origin/main))"
+        url: /scripts/bind-lease.sh
+      - title: "bootstrap-payments-module.sh (updated %Y->- (grafted, HEAD -> main, origin/main))"
+        url: /scripts/bootstrap-payments-module.sh
       - title: "bootstrap_full_pages_gui.sh (updated %Y->- (grafted, HEAD -> main, origin/main))"
         url: /scripts/bootstrap_full_pages_gui.sh
       - title: "bootstrap_pages_gui.sh (updated %Y->- (grafted, HEAD -> main, origin/main))"
         url: /scripts/bootstrap_pages_gui.sh
+      - title: "badge-renderer.js (updated %Y->- (grafted, HEAD -> main, origin/main))"
+        url: /scripts/codex/badges/badge-renderer.js
+      - title: "impact-score.js (updated %Y->- (grafted, HEAD -> main, origin/main))"
+        url: /scripts/codex/impact/impact-score.js
+      - title: "provisioning.yaml (updated %Y->- (grafted, HEAD -> main, origin/main))"
+        url: /scripts/codex/templates/provisioning.yaml
+      - title: "payments.js (updated %Y->- (grafted, HEAD -> main, origin/main))"
+        url: /scripts/finance-wallet-onboarding/backend/controllers/payments.js
+      - title: "payments.js (updated %Y->- (grafted, HEAD -> main, origin/main))"
+        url: /scripts/finance-wallet-onboarding/backend/routes/payments.js
       - title: "generate_codex_index.sh (updated %Y->- (grafted, HEAD -> main, origin/main))"
         url: /scripts/generate_codex_index.sh
+      - title: "log-atm-event.sh (updated %Y->- (grafted, HEAD -> main, origin/main))"
+        url: /scripts/log-atm-event.sh
+      - title: "log-lease-event.sh (updated %Y->- (grafted, HEAD -> main, origin/main))"
+        url: /scripts/log-lease-event.sh
+      - title: "atm-action.sh (updated %Y->- (grafted, HEAD -> main, origin/main))"
+        url: /scripts/scripts/atm-action.sh
+      - title: "bind-lease.sh (updated %Y->- (grafted, HEAD -> main, origin/main))"
+        url: /scripts/scripts/bind-lease.sh
+      - title: "log-atm-event.sh (updated %Y->- (grafted, HEAD -> main, origin/main))"
+        url: /scripts/scripts/log-atm-event.sh
+      - title: "log-lease-event.sh (updated %Y->- (grafted, HEAD -> main, origin/main))"
+        url: /scripts/scripts/log-lease-event.sh
+      - title: "verify-lease-token.sh (updated %Y->- (grafted, HEAD -> main, origin/main))"
+        url: /scripts/scripts/verify-lease-token.sh
+      - title: "verify-nfc-token.sh (updated %Y->- (grafted, HEAD -> main, origin/main))"
+        url: /scripts/scripts/verify-nfc-token.sh
+      - title: "BitcoinProvision.tsx (updated %Y->- (grafted, HEAD -> main, origin/main))"
+        url: /scripts/src/components/Payments/BitcoinProvision.tsx
+      - title: "MastercardProvision.tsx (updated %Y->- (grafted, HEAD -> main, origin/main))"
+        url: /scripts/src/components/Payments/MastercardProvision.tsx
+      - title: "VisaProvision.tsx (updated %Y->- (grafted, HEAD -> main, origin/main))"
+        url: /scripts/src/components/Payments/VisaProvision.tsx
+      - title: "PaymentsTab.tsx (updated %Y->- (grafted, HEAD -> main, origin/main))"
+        url: /scripts/src/components/Tabs/PaymentsTab.tsx
+      - title: "Bitcoin.tsx (updated %Y->- (grafted, HEAD -> main, origin/main))"
+        url: /scripts/src/components/icons/Bitcoin.tsx
+      - title: "Mastercard.tsx (updated %Y->- (grafted, HEAD -> main, origin/main))"
+        url: /scripts/src/components/icons/Mastercard.tsx
+      - title: "Visa.tsx (updated %Y->- (grafted, HEAD -> main, origin/main))"
+        url: /scripts/src/components/icons/Visa.tsx
+      - title: "verify-lease-token.sh (updated %Y->- (grafted, HEAD -> main, origin/main))"
+        url: /scripts/verify-lease-token.sh
+      - title: "verify-nfc-token.sh (updated %Y->- (grafted, HEAD -> main, origin/main))"
+        url: /scripts/verify-nfc-token.sh
   - title: "Assets & Crests"
     children:
       - title: "first-crest.svg (updated %Y->- (grafted, HEAD -> main, origin/main))"
